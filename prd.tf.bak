@@ -1,0 +1,77 @@
+provider "aws" {
+  profile = "default"
+  region  = "us-west-2"
+}
+
+
+ 
+resource "aws_s3_bucket" "prod_tf_course" {
+  bucket = "tf-course-20210801"
+  acl    = "private"
+}
+
+resource "aws_default_vpc" "default" {
+
+}
+
+resource "aws_security_group" "prod_web" {
+  name        = "prod_web"
+  description = "allow standard http and https ports inbound and everything outbound"
+
+  ingress = [{
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+    description      = "value"
+    from_port        = 80
+    protocol         = "tcp"
+    to_port          = 80
+    prefix_list_ids  = null,
+    security_groups  = null,
+    self             = null
+    },
+    {
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+      description      = "value"
+      prefix_list_ids  = null,
+      security_groups  = null
+      self             = null
+      from_port        = 443
+      protocol         = "tcp"
+      to_port          = 443
+    }
+  ]
+
+
+  egress = [{
+    description      = "allow everything out"
+    from_port        = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    prefix_list_ids  = null,
+    security_groups  = null
+    self             = null
+    protocol         = "-1"
+    to_port          = 0
+    ipv6_cidr_blocks = ["::/0"]
+  }]
+
+  tags = {
+    "terraform" : "true"
+  }
+}
+resource "aws_instance" "prod_web" {
+  ami                    = "ami-0afca6c808e56d77d"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.prod_web.id]
+  tags = {
+    "terraform" : "true"
+  }
+}
+
+resource "aws_eip" "prod_web" {
+  instance = aws_instance.prod_web.id
+  tags = {
+    "terraform" : "true"
+  }
+}
+
